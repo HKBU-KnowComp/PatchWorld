@@ -194,6 +194,7 @@ Default port mapping:
 - `patchworld/cli/`: standalone experiment CLIs
 - `scripts/`: AgentGym install and server-management helpers for RQ3
 - `EXPERIMENTS.md`: end-to-end runbook for RQ1/RQ2/RQ3
+- `examples/generated_world_models/`: appendix example induced models
 
 ## Notes for Anonymous Review
 
