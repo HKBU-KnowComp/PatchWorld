@@ -55,24 +55,21 @@ patchworld-induce \
   --output_model artifacts/patchworld/generated/maze_model.py
 ```
 
-## Data Packaging
+## Use Downloaded Data
 
-Create an anonymized data bundle from existing split JSONLs:
+Download/extract the released trajectory splits into:
 
-```bash
-bash scripts/package_data.sh
-```
+- `artifacts/patchworld/data_release/<env>/`
 
-Default source:
-- `../abduct-world/artifacts/resplit_train_val_test_seed42`
+Expected files per environment:
 
-Default output:
-- `artifacts/patchworld/data_release/`
+- `<env>_traj_train.jsonl`
+- `<env>_traj_val.jsonl`
+- `<env>_traj_test.jsonl`
 
-The packer writes:
-- per-env split files (`*_traj_train.jsonl`, `*_traj_val.jsonl`, `*_traj_test.jsonl`)
-- `manifest.json` with checksums and counts
-- a timestamped `.tar.gz` archive
+The helper scripts default to:
+
+- `DATA_ROOT=artifacts/patchworld/data_release`
 
 ## Experiment Commands
 
@@ -104,9 +101,12 @@ For RQ3-style live planning evaluation against AgentGym environments, use
 AgentGym source installs (not only PyPI). In our reference setup,
 install in this order:
 
-1) install core `agentenv` from source first  
-2) install required `agentenv-*` environment packages  
-3) start all servers on the standard ports
+1) install required standalone `agentenv-*` server packages  
+2) start all servers on the standard ports
+
+**Important:** run different environment servers in different conda
+environments. The `agentenv-*` packages have conflicting Python/dependency
+requirements, so a single shared environment is not reliable.
 
 ### Recommended one-command install
 
@@ -115,32 +115,41 @@ bash scripts/install_agentgym_envs.sh
 ```
 
 This script installs from `AGENTGYM_DIR` (default `../AgentGym`) and
-follows the package order:
+follows the 7-environment package order:
 
-- `agentenv` (core, first)
 - `agentenv-alfworld`
 - `agentenv-sciworld`
 - `agentenv-babyai`
 - `agentenv-lmrlgym` (Maze/Wordle)
 - `agentenv-textcraft`
 - `agentenv-webshop`
-- `agentenv-webarena`
-- `agentenv-tool` (weather/todo/movie/sheet/academia)
-- `agentenv-searchqa`
-- `agentenv-sqlgym`
 
 By default it uses environment-specific conda env names (`agentenv-alfworld`,
 `agentenv-sciworld`, `agentenv-babyai`, `agentenv-lmrlgym`,
-`agentenv-textcraft`, `agentenv-webshop`, `agentenv-webarena`,
-`agentenv-tool`, `agentenv-searchqa`, `agentenv-sqlgym`) because these
+`agentenv-textcraft`, `agentenv-webshop`) because these
 packages have different Python constraints in AgentGym.
+
+Recommended conda env mapping:
+
+- `agentenv-alfworld` -> `agentenv-alfworld` (standalone)
+- `agentenv-sciworld` -> `agentenv-sciworld` (standalone)
+- `agentenv-babyai` -> `agentenv-babyai` (standalone)
+- `agentenv-lmrlgym` -> `agentenv-lmrlgym` (standalone)
+- `agentenv-textcraft` -> `agentenv-textcraft` (standalone)
+- `agentenv-webshop` -> `agentenv-webshop` (standalone)
+
+For the PatchWorld runner process (`patchworld-rq3`), install the AgentGym
+client package once in your experiment environment:
+
+```bash
+pip install -e ../AgentGym/agentenv --no-deps
+```
 
 ### Manual source install (if you prefer)
 
 ```bash
 git clone --recursive https://github.com/marcos0318/AgentGym
 cd AgentGym
-pip install -e ./agentenv
 pip install -e ./agentenv-alfworld
 pip install -e ./agentenv-sciworld
 pip install -e ./agentenv-babyai
@@ -160,12 +169,6 @@ Paper/core environments:
 bash scripts/start_agentgym_servers.sh
 ```
 
-Full AgentGym ports (36001-36014):
-
-```bash
-PROFILE=full bash scripts/start_agentgym_servers.sh
-```
-
 Stop all servers:
 
 ```bash
@@ -179,14 +182,6 @@ Default port mapping:
 - `36004`: lmrlgym (maze/wordle)
 - `36005`: textcraft
 - `36006`: webshop
-- `36007`: webarena
-- `36008`: weather
-- `36009`: todo
-- `36010`: movie
-- `36011`: sheet
-- `36012`: academia
-- `36013`: searchqa
-- `36014`: sqlgym
 
 ## Repository Layout
 

@@ -82,22 +82,27 @@ Results:
 
 ### 5.1 Install AgentGym source packages
 
+Use separate conda environments per server package to avoid dependency conflicts
+between `agentenv-*` environments.
+
 ```bash
 bash scripts/install_agentgym_envs.sh
 ```
 
-### 5.2 Start environment servers
+Each server package is installed standalone in its own env (`agentenv-alfworld`,
+`agentenv-sciworld`, `agentenv-babyai`, `agentenv-lmrlgym`,
+`agentenv-textcraft`, `agentenv-webshop`).
 
-Core paper envs:
+For the PatchWorld runner process, install the AgentGym client package once:
+
+```bash
+pip install -e ../AgentGym/agentenv --no-deps
+```
+
+### 5.2 Start environment servers
 
 ```bash
 bash scripts/start_agentgym_servers.sh
-```
-
-Full profile (ports 36001-36014):
-
-```bash
-PROFILE=full bash scripts/start_agentgym_servers.sh
 ```
 
 ### 5.3 Run RQ3

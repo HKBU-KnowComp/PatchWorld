@@ -4,8 +4,7 @@ set -euo pipefail
 # Install AgentGym source packages for PatchWorld RQ3/live-agent runs.
 #
 # Behavior:
-#  1) Install core `agentenv` first.
-#  2) Install each `agentenv-*` environment package from source.
+#  - Install each `agentenv-*` server package from source in its own conda env.
 #
 # Usage examples:
 #   bash scripts/install_agentgym_envs.sh
@@ -13,10 +12,9 @@ set -euo pipefail
 #   INSTALL_NO_DEPS=1 bash scripts/install_agentgym_envs.sh
 #
 # Notes:
-# - By default this script expects environment-specific conda env names:
+# - By default this script expects conda env names:
 #     agentenv-alfworld, agentenv-sciworld, agentenv-babyai, agentenv-lmrlgym,
-#     agentenv-textcraft, agentenv-webshop, agentenv-webarena, agentenv-tool,
-#     agentenv-searchqa, agentenv-sqlgym.
+#     agentenv-textcraft, agentenv-webshop.
 # - It runs `pip install -e` inside each env via `conda run -n ...`.
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -51,19 +49,12 @@ run_install() {
   conda run -n "${env_name}" python -m pip install "${PIP_FLAGS[@]}" "${pkg_dir}"
 }
 
-# Core package first (as requested).
-run_install "agentenv-alfworld" "${AGENTGYM_DIR}/agentenv"
-
-# Environment packages.
+# Server packages (standalone per environment).
 run_install "agentenv-alfworld" "${AGENTGYM_DIR}/agentenv-alfworld"
 run_install "agentenv-sciworld" "${AGENTGYM_DIR}/agentenv-sciworld"
 run_install "agentenv-babyai" "${AGENTGYM_DIR}/agentenv-babyai"
 run_install "agentenv-lmrlgym" "${AGENTGYM_DIR}/agentenv-lmrlgym"
 run_install "agentenv-textcraft" "${AGENTGYM_DIR}/agentenv-textcraft"
 run_install "agentenv-webshop" "${AGENTGYM_DIR}/agentenv-webshop"
-run_install "agentenv-webarena" "${AGENTGYM_DIR}/agentenv-webarena"
-run_install "agentenv-tool" "${AGENTGYM_DIR}/agentenv-tool"
-run_install "agentenv-searchqa" "${AGENTGYM_DIR}/agentenv-searchqa"
-run_install "agentenv-sqlgym" "${AGENTGYM_DIR}/agentenv-sqlgym"
 
 echo "[install-agentgym] done"
