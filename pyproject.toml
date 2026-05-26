@@ -1,0 +1,29 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "patchworld"
+version = "0.1.0"
+description = "Standalone PatchWorld induction and evaluation toolkit"
+readme = "README.md"
+requires-python = ">=3.10"
+dependencies = [
+  "openai>=1.0.0",
+  "nltk>=3.8",
+]
+
+[project.optional-dependencies]
+metrics = []
+
+[project.scripts]
+patchworld-benchmark = "patchworld.cli.benchmark:main"
+patchworld-induce = "patchworld.cli.induce:main"
+patchworld-rq3 = "patchworld.cli.rq3_agent_eval:main"
+patchworld-package-data = "patchworld.cli.package_data:main"
+
+[tool.setuptools]
+include-package-data = true
+
+[tool.setuptools.packages.find]
+include = ["patchworld*"]
