@@ -12,14 +12,8 @@ Included files:
 - `webshop_benchmark_world_model.py`
 - `wordle_benchmark_world_model.py`
 
-These examples were copied from the paper's `generated_world_models/` appendix
-artifacts and adapted for this standalone repo by switching:
-
-```python
-from abductworld.worldmodel_base import BaseWorldModel
-```
-
-to:
+These examples were copied from the paper appendix and import from
+`patchworld.worldmodel_base`:
 
 ```python
 from patchworld.worldmodel_base import BaseWorldModel

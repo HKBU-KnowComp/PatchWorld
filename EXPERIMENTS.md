@@ -7,9 +7,23 @@ end-to-end in the standalone repo.
 
 ```bash
 cd /path/to/patchworld
+PATCHWORLD_CONDA_ENV=patchworld bash scripts/install.sh
+conda activate patchworld
+```
+
+Venv alternative:
+
+```bash
 python -m venv .venv
 source .venv/bin/activate
+bash scripts/install.sh
+```
+
+This installs PatchWorld and the AgentGym client from GitHub (required; PyPI is stale):
+
+```bash
 pip install -e .
+pip install "git+https://github.com/marcos0318/AgentGym.git#subdirectory=agentenv" --no-deps
 python -m nltk.downloader punkt
 ```
 
@@ -20,15 +34,37 @@ export PATCHWORLD_LLM_API_KEY=...
 # or use DEEPINFRA_API_KEY
 ```
 
-## 2) Package the Data
+## 2) Get the Data
 
-If you already have split JSONLs in the source tree, package them for this repo:
+### Download from Hugging Face (recommended)
+
+Trajectory splits are hosted on Hugging Face, not GitHub:
+
+- [HKBU-KnowComp/patchworld-trajectories](https://huggingface.co/datasets/HKBU-KnowComp/patchworld-trajectories)
 
 ```bash
-bash scripts/package_data.sh
+pip install -U huggingface_hub
+bash scripts/download_data.sh
 ```
 
-Overrides:
+This writes to `artifacts/patchworld/data_release/`.
+
+### Package locally (maintainers only)
+
+If you already have split JSONLs locally, package them for upload (set `SOURCE_ROOT`):
+
+```bash
+SOURCE_ROOT=/path/to/split_jsonls bash scripts/package_data.sh
+```
+
+Upload to Hugging Face (requires a write token):
+
+```bash
+export HF_TOKEN=...   # token with write access
+bash scripts/upload_data.sh
+```
+
+Overrides for packaging:
 
 ```bash
 SOURCE_ROOT=/path/to/resplit_train_val_test_seed42 \
@@ -37,10 +73,10 @@ ENVS=alfworld,babyai,maze,sciworld,textcraft,webshop,wordle \
 bash scripts/package_data.sh
 ```
 
-Output:
+Packaging output:
 - `artifacts/patchworld/data_release/<env>/<env>_traj_{train,val,test}.jsonl`
 - `artifacts/patchworld/data_release/manifest.json`
-- `artifacts/patchworld/data_release_<timestamp>.tar.gz`
+- `artifacts/patchworld/data_release_<timestamp>.tar.gz` (local archive only; not uploaded)
 
 ## 3) Run RQ1 (One-step Fidelity)
 
@@ -80,23 +116,27 @@ Results:
 
 ## 5) Run RQ3 (Live Planning)
 
-### 5.1 Install AgentGym source packages
+### 5.1 Install AgentGym server envs
 
-Use separate conda environments per server package to avoid dependency conflicts
-between `agentenv-*` environments.
+PatchWorld + the AgentGym client are installed in section 1). RQ3 also needs
+**one conda env per AgentGym server**:
 
 ```bash
+git clone --recursive https://github.com/marcos0318/AgentGym ../AgentGym
 bash scripts/install_agentgym_envs.sh
 ```
 
-Each server package is installed standalone in its own env (`agentenv-alfworld`,
-`agentenv-sciworld`, `agentenv-babyai`, `agentenv-lmrlgym`,
-`agentenv-textcraft`, `agentenv-webshop`).
-
-For the PatchWorld runner process, install the AgentGym client package once:
+Maze/wordle only:
 
 ```bash
-pip install -e ../AgentGym/agentenv --no-deps
+ONLY_ENVS=lmrlgym bash scripts/install_agentgym_envs.sh
+```
+
+Custom server env names:
+
+```bash
+CONDA_ENV_LMRLGYM=pw-test-lmrlgym ONLY_ENVS=lmrlgym bash scripts/install_agentgym_envs.sh
+ONLY_SERVERS=lmrlgym CONDA_ENV_LMRLGYM=pw-test-lmrlgym bash scripts/start_agentgym_servers.sh
 ```
 
 ### 5.2 Start environment servers

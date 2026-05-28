@@ -7,10 +7,14 @@ name = "patchworld"
 version = "0.1.0"
 description = "Standalone PatchWorld induction and evaluation toolkit"
 readme = "README.md"
+license = { text = "MIT" }
 requires-python = ">=3.10"
 dependencies = [
   "openai>=1.0.0",
   "nltk>=3.8",
+  "requests>=2.28",
+  "torch>=2.0",
+  "transformers>=4.35",
 ]
 
 [project.optional-dependencies]

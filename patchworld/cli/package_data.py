@@ -41,7 +41,7 @@ def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="Package PatchWorld trajectory splits for release.")
     parser.add_argument(
         "--source_root",
-        default="../abduct-world/artifacts/resplit_train_val_test_seed42",
+        required=True,
         help="Root directory containing per-env split JSONL files.",
     )
     parser.add_argument(

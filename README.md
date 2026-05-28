@@ -1,31 +1,50 @@
-# PatchWorld (Anonymous Standalone Release)
+# PatchWorld
 
-This repository is a standalone, anonymized implementation of the PatchWorld
-code-based world-model induction pipeline used in the paper experiments.
+Standalone implementation of the PatchWorld code-based world-model induction
+pipeline used in the paper experiments.
 
 It includes:
 - LLM-driven symbolic world-model induction with TracePatch-style repair.
 - Replay-based validation and model selection.
-- One-step and rollout evaluation utilities.
+- One-step, rollout, and live-agent (RQ3) evaluation utilities.
 - Optional train-only residual memory wrapper.
 
-Current CLI coverage focuses on offline induction/evaluation (RQ1/RQ2-style).
-If you run a live-agent RQ3 setup, use the AgentGym source installation
-requirements below.
-
 ## Install
+
+Default: create a venv and install into it.
 
 ```bash
 cd /path/to/patchworld
 python -m venv .venv
 source .venv/bin/activate
-pip install -e .
+bash scripts/install.sh
 ```
 
-Install optional NLTK resources used by BLEU metrics:
+Or create a named conda env in one step:
 
 ```bash
+cd /path/to/patchworld
+PATCHWORLD_CONDA_ENV=patchworld bash scripts/install.sh
+conda activate patchworld
+```
+
+`scripts/install.sh` installs PatchWorld plus the **AgentGym client from GitHub**
+(PyPI releases are stale; do not `pip install agentenv`):
+
+```bash
+pip install -e .
+pip install "git+https://github.com/marcos0318/AgentGym.git#subdirectory=agentenv" --no-deps
 python -m nltk.downloader punkt
+```
+
+The `--no-deps` flag keeps AgentGym from overwriting PatchWorld's runtime
+packages (`torch`, `transformers`, `requests`, etc.).
+
+Override the GitHub source if needed:
+
+```bash
+AGENTGYM_GIT_URL=git+https://github.com/marcos0318/AgentGym.git#subdirectory=agentenv \
+bash scripts/install.sh
 ```
 
 ## Required Data Format
@@ -36,13 +55,15 @@ PatchWorld expects JSONL trajectory files with:
 
 ## Quick Start
 
+Download the trajectory splits first (see [Download Data](#download-data-hugging-face)).
+
 Induce + evaluate one environment:
 
 ```bash
 patchworld-benchmark \
   --env maze \
-  --train_glob "artifacts/resplit_train_val_test_seed42/maze/maze_traj_train.jsonl" \
-  --eval_glob "artifacts/resplit_train_val_test_seed42/maze/maze_traj_test.jsonl" \
+  --train_glob "artifacts/patchworld/data_release/maze/maze_traj_train.jsonl" \
+  --eval_glob "artifacts/patchworld/data_release/maze/maze_traj_test.jsonl" \
   --output_dir artifacts/patchworld/results
 ```
 
@@ -51,25 +72,51 @@ Induce model only:
 ```bash
 patchworld-induce \
   --env maze \
-  --train_glob "artifacts/resplit_train_val_test_seed42/maze/maze_traj_train.jsonl" \
+  --train_glob "artifacts/patchworld/data_release/maze/maze_traj_train.jsonl" \
   --output_model artifacts/patchworld/generated/maze_model.py
 ```
 
-## Use Downloaded Data
+## Download Data (Hugging Face)
 
-Download/extract the released trajectory splits into:
+Trajectory splits are **not** stored in this GitHub repo. Download them from Hugging Face:
 
-- `artifacts/patchworld/data_release/<env>/`
+- Dataset: [HKBU-KnowComp/patchworld-trajectories](https://huggingface.co/datasets/HKBU-KnowComp/patchworld-trajectories)
 
-Expected files per environment:
+Install the Hugging Face CLI if needed:
 
-- `<env>_traj_train.jsonl`
-- `<env>_traj_val.jsonl`
-- `<env>_traj_test.jsonl`
+```bash
+pip install -U huggingface_hub
+```
 
-The helper scripts default to:
+Download into the default location used by the experiment scripts:
 
-- `DATA_ROOT=artifacts/patchworld/data_release`
+```bash
+bash scripts/download_data.sh
+```
+
+This writes files to `artifacts/patchworld/data_release/`.
+
+Manual download:
+
+```bash
+hf download HKBU-KnowComp/patchworld-trajectories \
+  --repo-type dataset \
+  --local-dir artifacts/patchworld/data_release \
+  --exclude "*.tar.gz"
+```
+
+Expected layout after download:
+
+- `artifacts/patchworld/data_release/<env>/<env>_traj_{train,val,test}.jsonl`
+- `artifacts/patchworld/data_release/manifest.json`
+
+The helper scripts default to `DATA_ROOT=artifacts/patchworld/data_release`.
+
+If you maintain the dataset, upload from a packaged local copy with:
+
+```bash
+bash scripts/upload_data.sh
+```
 
 ## Experiment Commands
 
@@ -97,73 +144,59 @@ LLM API settings (OpenAI-compatible):
 
 ## RQ3 Prerequisite (Live Planning)
 
-For RQ3-style live planning evaluation against AgentGym environments, use
-AgentGym source installs (not only PyPI). In our reference setup,
-install in this order:
+PatchWorld itself (including the AgentGym HTTP client) is installed by
+`bash scripts/install.sh` above. RQ3 additionally needs **separate conda envs
+per AgentGym server** — do not run multiple servers from one shared conda env.
 
-1) install required standalone `agentenv-*` server packages  
-2) start all servers on the standard ports
+### 1) Install AgentGym server envs (one conda env each)
 
-**Important:** run different environment servers in different conda
-environments. The `agentenv-*` packages have conflicting Python/dependency
-requirements, so a single shared environment is not reliable.
+Clone AgentGym once if you have not already:
 
-### Recommended one-command install
+```bash
+git clone --recursive https://github.com/marcos0318/AgentGym ../AgentGym
+```
+
+Then bootstrap the core paper servers:
 
 ```bash
 bash scripts/install_agentgym_envs.sh
 ```
 
-This script installs from `AGENTGYM_DIR` (default `../AgentGym`) and
-follows the 7-environment package order:
+| Conda env | Server package | Notes |
+|---|---|---|
+| `agentenv-alfworld` | `agentenv-alfworld` | runs `setup.sh` |
+| `agentenv-sciworld` | `agentenv-sciworld` | Python 3.8 |
+| `agentenv-babyai` | `agentenv-babyai` | |
+| `agentenv-lmrlgym` | `agentenv-lmrlgym` | maze/wordle; uses `environment.yml` |
+| `agentenv-textcraft` | `agentenv-textcraft` | launch from package dir |
+| `agentenv-webshop` | `agentenv-webshop` | uses `environment.yml` + `setup.sh` |
 
-- `agentenv-alfworld`
-- `agentenv-sciworld`
-- `agentenv-babyai`
-- `agentenv-lmrlgym` (Maze/Wordle)
-- `agentenv-textcraft`
-- `agentenv-webshop`
-
-By default it uses environment-specific conda env names (`agentenv-alfworld`,
-`agentenv-sciworld`, `agentenv-babyai`, `agentenv-lmrlgym`,
-`agentenv-textcraft`, `agentenv-webshop`) because these
-packages have different Python constraints in AgentGym.
-
-Recommended conda env mapping:
-
-- `agentenv-alfworld` -> `agentenv-alfworld` (standalone)
-- `agentenv-sciworld` -> `agentenv-sciworld` (standalone)
-- `agentenv-babyai` -> `agentenv-babyai` (standalone)
-- `agentenv-lmrlgym` -> `agentenv-lmrlgym` (standalone)
-- `agentenv-textcraft` -> `agentenv-textcraft` (standalone)
-- `agentenv-webshop` -> `agentenv-webshop` (standalone)
-
-For the PatchWorld runner process (`patchworld-rq3`), install the AgentGym
-client package once in your experiment environment:
+Install a subset only:
 
 ```bash
-pip install -e ../AgentGym/agentenv --no-deps
+ONLY_ENVS=lmrlgym bash scripts/install_agentgym_envs.sh
 ```
 
-### Manual source install (if you prefer)
+Custom conda env names (use the same names when starting servers):
 
 ```bash
-git clone --recursive https://github.com/marcos0318/AgentGym
-cd AgentGym
-pip install -e ./agentenv-alfworld
-pip install -e ./agentenv-sciworld
-pip install -e ./agentenv-babyai
-pip install -e ./agentenv-lmrlgym
-pip install -e ./agentenv-textcraft
-pip install -e ./agentenv-webshop
+CONDA_ENV_LMRLGYM=pw-test-lmrlgym \
+ONLY_ENVS=lmrlgym \
+bash scripts/install_agentgym_envs.sh
+
+ONLY_SERVERS=lmrlgym \
+CONDA_ENV_LMRLGYM=pw-test-lmrlgym \
+bash scripts/start_agentgym_servers.sh
 ```
 
-If you want to avoid dependency drift in existing envs, use `--no-deps` with
-editable installs (the helper script defaults to this behavior).
+Available overrides: `CONDA_ENV_ALFWORLD`, `CONDA_ENV_SCIWORLD`,
+`CONDA_ENV_BABYAI`, `CONDA_ENV_LMRLGYM`, `CONDA_ENV_TEXTCRAFT`,
+`CONDA_ENV_WEBSHOP`.
 
-### Start servers (all at once)
+Per-server launch commands are documented in each `agentenv-*` package under
+the [AgentGym](https://github.com/marcos0318/AgentGym) repository.
 
-Paper/core environments:
+### 2) Start servers
 
 ```bash
 bash scripts/start_agentgym_servers.sh
@@ -183,6 +216,23 @@ Default port mapping:
 - `36005`: textcraft
 - `36006`: webshop
 
+### 3) Run RQ3
+
+Uses the latest induced model per env from RQ1 output by default:
+
+```bash
+bash scripts/run_rq3.sh
+```
+
+Quick smoke test (3 tasks, maze only):
+
+```bash
+ENVS=maze RQ1_DIR=artifacts/patchworld/results/rq1_smoke \
+OUT_DIR=artifacts/patchworld/results/rq3_smoke \
+NUM_TASKS=3 MAX_STEPS=10 \
+bash scripts/run_rq3.sh
+```
+
 ## Repository Layout
 
 - `patchworld/`: core package (induction, validator, evaluator, residual memory)
@@ -191,8 +241,6 @@ Default port mapping:
 - `EXPERIMENTS.md`: end-to-end runbook for RQ1/RQ2/RQ3
 - `examples/generated_world_models/`: appendix example induced models
 
-## Notes for Anonymous Review
+## License
 
-- The code avoids project-specific naming and paths from prior internal repos.
-- Outputs default to `artifacts/patchworld/...`.
-- No baseline-specific external repos are required for core induction/evaluation.
+MIT — see [LICENSE](LICENSE).
