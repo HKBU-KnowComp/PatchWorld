@@ -135,6 +135,34 @@ bash scripts/run_rq3.sh
 
 For full details, see `EXPERIMENTS.md`.
 
+## Comparative Baselines
+
+Baseline launchers for LLM-Direct, Word2World, PoE-World, and WorldCoder live in
+`test_scripts/baselines/`. They expose the paper-aligned comparisons, default to
+PatchWorld's downloaded trajectory splits, and write to
+`artifacts/patchworld/baselines/`. Word2World also exposes the Qwen observation
+SFT training path from `/data/jbai/abduct-world/test_scripts/qwen_observation`.
+
+```bash
+python test_scripts/baselines/run.py --baseline llm-direct --smoke
+python test_scripts/baselines/run.py --baseline word2world --rq train --smoke
+python test_scripts/baselines/run.py --baseline word2world --rq rq12 --smoke
+```
+
+PoE-World and WorldCoder use the revised bug-fixed implementation from
+`https://github.com/marcos0318/poe-world` via `POE_WORLD_REPO` and should be run
+from the separate `poeworld` conda environment:
+
+```bash
+conda activate poeworld
+python test_scripts/baselines/run.py --baseline poeworld --rq rq12 --smoke
+python test_scripts/baselines/run.py --baseline poeworld --rq rq3 --smoke
+python test_scripts/baselines/run.py --baseline worldcoder --rq rq12 --smoke
+python test_scripts/baselines/run.py --baseline worldcoder --rq rq3 --smoke
+```
+
+See `test_scripts/baselines/README.md` for all overrides.
+
 ## Environment Variables
 
 LLM API settings (OpenAI-compatible):
