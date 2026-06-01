@@ -269,6 +269,22 @@ bash scripts/run_rq3.sh
 - `EXPERIMENTS.md`: end-to-end runbook for RQ1/RQ2/RQ3
 - `examples/generated_world_models/`: appendix example induced models
 
+
+## Citation
+
+Please cite our paper if you think this project interesting or useful. 
+```
+@misc{bai2026patchworldgradientfreeoptimizationexecutable,
+      title={PatchWorld: Gradient-Free Optimization of Executable World Models}, 
+      author={Jiaxin Bai and Yue Guo and Yifei Dong and Jiaxuan Xiong and Tianshi Zheng and Yixia Li and Tianqing Fang and Yufei Li and Yisen Gao and Haoyu Huang and Zhongwei Xie and Hong Ting Tsang and Zihao Wang and Lihui Liu and Jeff Pan and Yangqiu Song},
+      year={2026},
+      eprint={2605.30880},
+      archivePrefix={arXiv},
+      primaryClass={cs.CL},
+      url={https://arxiv.org/abs/2605.30880}, 
+}
+```
+
 ## License
 
 MIT — see [LICENSE](LICENSE).
